@@ -9,13 +9,12 @@ import (
 	"hot-coffee/internal/service"
 	"log"
 	"net/http"
-	"strconv"
+	"strings"
 )
 
 func main() {
 	helpFlag := flag.Bool("help", false, "Prints help information")
 	port := flag.Int("port", 8080, "Port number for the server")
-
 	flag.Parse()
 
 	if *helpFlag {
@@ -37,24 +36,106 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/inventory", inventoryHandler.GetAllInventoryItems)
-	mux.HandleFunc("/inventory/add", inventoryHandler.AddNewInventoryItem)
-	mux.HandleFunc("/inventory/update", inventoryHandler.UpdateInventoryItem)
-	mux.HandleFunc("/inventory/delete", inventoryHandler.DeleteInventoryItem)
+	mux.HandleFunc("/inventory", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			inventoryHandler.GetAllInventoryItems(w, r)
+		case http.MethodPost:
+			inventoryHandler.AddNewInventoryItem(w, r)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	mux.HandleFunc("/inventory/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/inventory/")
+		if id == "" {
+			http.Error(w, "Missing inventory ID", http.StatusBadRequest)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			inventoryHandler.GetInventoryItem(w, r, id)
+		case http.MethodPut:
+			inventoryHandler.UpdateInventoryItem(w, r, id)
+		case http.MethodDelete:
+			inventoryHandler.DeleteInventoryItem(w, r, id)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
-	mux.HandleFunc("/menu", menuHandler.GetAllMenuItems)
-	mux.HandleFunc("/menu/add", menuHandler.AddNewMenuItem)
-	mux.HandleFunc("/menu/update", menuHandler.UpdateMenuItem)
-	mux.HandleFunc("/menu/delete", menuHandler.DeleteMenuItem)
+	mux.HandleFunc("/menu", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			menuHandler.GetAllMenuItems(w, r)
+		case http.MethodPost:
+			menuHandler.AddNewMenuItem(w, r)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	mux.HandleFunc("/menu/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/menu/")
+		if id == "" {
+			http.Error(w, "Missing menu item ID", http.StatusBadRequest)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			menuHandler.GetMenuItem(w, r, id)
+		case http.MethodPut:
+			menuHandler.UpdateMenuItem(w, r, id)
+		case http.MethodDelete:
+			menuHandler.DeleteMenuItem(w, r, id)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
-	mux.HandleFunc("/orders", orderHandler.GetAllOrders)
-	mux.HandleFunc("/orders/create", orderHandler.CreateOrder)
-	mux.HandleFunc("/orders/update-status", orderHandler.UpdateOrder)
-	mux.HandleFunc("/orders/delete", orderHandler.DeleteOrder)
+	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			orderHandler.GetAllOrders(w, r)
+		case http.MethodPost:
+			orderHandler.CreateOrder(w, r)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/orders/")
+		if path == "" {
+			http.NotFound(w, r)
+			return
+		}
 
-	log.Println("Starting server on :", *port)
-	newPort := strconv.Itoa(*port)
-	if err := http.ListenAndServe(newPort, nil); err != nil {
-		fmt.Println("Server error:", err)
+		if strings.HasSuffix(path, "/close") && r.Method == http.MethodPost {
+			orderID := strings.TrimSuffix(path, "/close")
+			orderID = strings.TrimSuffix(orderID, "/")
+			orderHandler.CloseOrder(w, r, orderID)
+			return
+		}
+
+		orderID := strings.TrimSuffix(path, "/")
+		switch r.Method {
+		case http.MethodGet:
+			orderHandler.GetOrderByID(w, r, orderID)
+		case http.MethodPut:
+			orderHandler.UpdateOrder(w, r, orderID)
+		case http.MethodDelete:
+			orderHandler.DeleteOrder(w, r, orderID)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	if *port < 1 || *port > 65535 {
+		log.Fatalf("Invalid port number: %d. Must be between 1 and 65535.", *port)
+	}
+	address := fmt.Sprintf(":%d", *port)
+	log.Printf("Server started at http://localhost%s\n", address)
+
+	if err := http.ListenAndServe(address, mux); err != nil {
+		log.Fatalf("Server error: %v", err)
 	}
 }

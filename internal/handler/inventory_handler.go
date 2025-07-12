@@ -2,23 +2,24 @@ package handler
 
 import (
 	"encoding/json"
+	"hot-coffee/help"
 	"hot-coffee/internal/service"
 	"hot-coffee/models"
 	"net/http"
 )
 
 type InventoryHandler struct {
-	InventoryService service.InventoryService
+	InventoryService *service.InventoryService
 }
 
-func NewInventoryHandler(service service.InventoryService) *InventoryHandler {
+func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 	return &InventoryHandler{InventoryService: service}
 }
 
 func (h *InventoryHandler) GetAllInventoryItems(w http.ResponseWriter, r *http.Request) {
 	items, err := h.InventoryService.GetAllInventoryItems()
 	if err != nil {
-		http.Error(w, "Failed to fetch inventory items", http.StatusInternalServerError)
+		help.WriteError(w, http.StatusInternalServerError, "Failed to fetch inventory items")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -28,11 +29,11 @@ func (h *InventoryHandler) GetAllInventoryItems(w http.ResponseWriter, r *http.R
 func (h *InventoryHandler) AddNewInventoryItem(w http.ResponseWriter, r *http.Request) {
 	var item models.InventoryItem
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		help.WriteError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	if err := h.InventoryService.AddNewInventoryItem(item); err != nil {
-		http.Error(w, "Failed to add inventory item", http.StatusInternalServerError)
+		help.WriteError(w, http.StatusInternalServerError, "Failed to add inventory item")
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -41,11 +42,11 @@ func (h *InventoryHandler) AddNewInventoryItem(w http.ResponseWriter, r *http.Re
 func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Request) {
 	var item models.InventoryItem
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		help.WriteError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	if err := h.InventoryService.UpdateInventoryItem(item); err != nil {
-		http.Error(w, "Failed to update inventory item", http.StatusInternalServerError)
+		help.WriteError(w, http.StatusInternalServerError, "Failed to update inventory item")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -54,11 +55,11 @@ func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Re
 func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request) {
 	ingredientID := r.URL.Query().Get("ingredient_id")
 	if ingredientID == "" {
-		http.Error(w, "Missing ingredient_id parameter", http.StatusBadRequest)
+		help.WriteError(w, http.StatusBadRequest, "Missing ingredient_id parameter")
 		return
 	}
 	if err := h.InventoryService.DeleteInventoryItem(ingredientID); err != nil {
-		http.Error(w, "Failed to delete inventory item", http.StatusInternalServerError)
+		help.WriteError(w, http.StatusInternalServerError, "Failed to delete inventory item")
 		return
 	}
 	w.WriteHeader(http.StatusOK)

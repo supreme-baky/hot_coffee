@@ -1,15 +1,35 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"hot-coffee/help"
+	"hot-coffee/internal/dal"
 	"hot-coffee/internal/handler"
 	"hot-coffee/internal/service"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 func main() {
-	inventoryService := service.NewInventoryService()
-	menuService := service.NewMenuService()
-	orderService := service.NewOrderService()
+	helpFlag := flag.Bool("help", false, "Prints help information")
+	port := flag.Int("port", 8080, "Port number for the server")
+
+	flag.Parse()
+
+	if *helpFlag {
+		help.PrintInfo()
+		return
+	}
+
+	inventoryRepo := dal.NewJSONInventoryManager("data/inventory.json")
+	menuRepo := dal.NewJSONMenuManager("data/menu_items.json")
+	orderRepo := dal.NewJSONOrderManager("data/orders.json")
+
+	inventoryService := service.NewInventoryService(inventoryRepo)
+	menuService := service.NewMenuService(menuRepo)
+	orderService := service.NewOrderService(orderRepo)
 
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)
 	menuHandler := handler.NewMenuHandler(menuService)
@@ -29,8 +49,12 @@ func main() {
 
 	mux.HandleFunc("/orders", orderHandler.GetAllOrders)
 	mux.HandleFunc("/orders/create", orderHandler.CreateOrder)
-	mux.HandleFunc("/orders/update-status", orderHandler.UpdateOrderStatus)
+	mux.HandleFunc("/orders/update-status", orderHandler.UpdateOrder)
 	mux.HandleFunc("/orders/delete", orderHandler.DeleteOrder)
 
-	http.ListenAndServe(":8080", mux)
+	log.Println("Starting server on :", *port)
+	newPort := strconv.Itoa(*port)
+	if err := http.ListenAndServe(newPort, nil); err != nil {
+		fmt.Println("Server error:", err)
+	}
 }

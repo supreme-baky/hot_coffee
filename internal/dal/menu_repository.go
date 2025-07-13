@@ -9,6 +9,7 @@ type MenuManager interface {
 	UpdateMenuItem(item models.MenuItem) error
 	DeleteMenuItem(id string) error
 }
+
 func (m *JSONMenuManager) LoadMenuItems() ([]models.MenuItem, error) {
 	return m.GetAllMenuItems() // или LoadAll()
 }

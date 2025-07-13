@@ -32,7 +32,7 @@ func (m *JSONMenuManager) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(m.filePath, data, 0644)
+	return os.WriteFile(m.filePath, data, 0o644)
 }
 
 func (m *JSONMenuManager) AddNewMenuItem(item models.MenuItem) error {

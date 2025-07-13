@@ -32,7 +32,7 @@ func (m *JSONInventoryManager) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(m.filePath, data, 0644)
+	return os.WriteFile(m.filePath, data, 0o644)
 }
 
 func (m *JSONInventoryManager) AddNewInventoryItem(item models.InventoryItem) error {

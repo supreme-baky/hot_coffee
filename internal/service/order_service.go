@@ -1,12 +1,12 @@
 package service
 
 import (
-	"hot-coffee/internal/dal"
+	"hot-coffee/internal/dal" // Импортируем dal
 	"hot-coffee/models"
 )
 
 type OrderService struct {
-	OrderRepo dal.OrderManager
+	OrderRepo dal.OrderManager // Используем dal.OrderManager
 }
 
 func NewOrderService(repo dal.OrderManager) *OrderService {
@@ -23,8 +23,8 @@ func (s *OrderService) GetAllOrders() ([]models.Order, error) {
 	return s.OrderRepo.GetAllOrders()
 }
 
-func (s *OrderService) UpdateOrder(orderID models.Order) error {
-	return s.OrderRepo.UpdateOrder(orderID)
+func (s *OrderService) UpdateOrder(order models.Order) error {
+	return s.OrderRepo.UpdateOrder(order)
 }
 
 func (s *OrderService) DeleteOrder(orderID string) error {
@@ -38,3 +38,4 @@ func (s *OrderService) CloseOrder(orderID string) error {
 func (s *OrderService) GetOrderByID(orderID string) (models.Order, error) {
 	return s.OrderRepo.GetOrderByID(orderID)
 }
+

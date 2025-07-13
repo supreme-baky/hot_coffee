@@ -1,6 +1,8 @@
 package service
 
-import "hot-coffee/models"
+import (
+	"hot-coffee/models"
+)
 
 type OrderRepository interface {
 	LoadOrders() ([]models.Order, error)

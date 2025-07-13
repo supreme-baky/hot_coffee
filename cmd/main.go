@@ -29,10 +29,12 @@ func main() {
 	inventoryService := service.NewInventoryService(inventoryRepo)
 	menuService := service.NewMenuService(menuRepo)
 	orderService := service.NewOrderService(orderRepo)
+	reportService := service.NewReportService(orderRepo, menuRepo)
 
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)
 	menuHandler := handler.NewMenuHandler(menuService)
 	orderHandler := handler.NewOrderHandler(orderService)
+	reportHandler := handler.NewReportHandler(reportService)
 
 	mux := http.NewServeMux()
 
@@ -128,6 +130,9 @@ func main() {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
+
+	mux.HandleFunc("/reports/total-sales", reportHandler.GetTotalSales)
+	mux.HandleFunc("/reports/popular-items", reportHandler.GetPopularItems)
 
 	if *port < 1 || *port > 65535 {
 		log.Fatalf("Invalid port number: %d. Must be between 1 and 65535.", *port)

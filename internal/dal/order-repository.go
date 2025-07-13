@@ -10,3 +10,6 @@ type OrderManager interface {
 	DeleteOrder(id string) error
 	CloseOrder(id string) error
 }
+func (m *JSONOrderManager) LoadOrders() ([]models.Order, error) {
+	return m.GetAllOrders()
+}

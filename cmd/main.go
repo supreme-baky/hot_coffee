@@ -9,12 +9,14 @@ import (
 	"hot-coffee/internal/service"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
 
 func main() {
 	helpFlag := flag.Bool("help", false, "Prints help information")
 	port := flag.Int("port", 8080, "Port number for the server")
+	dirFlag := flag.String("dir", "./data", "Creates a directory with initial JSON files (orders, menu_items, inventory)")
 	flag.Parse()
 
 	if *helpFlag {
@@ -22,13 +24,20 @@ func main() {
 		return
 	}
 
-	inventoryRepo := dal.NewJSONInventoryManager("data/inventory.json")
-	menuRepo := dal.NewJSONMenuManager("data/menu_items.json")
-	orderRepo := dal.NewJSONOrderManager("data/orders.json")
+	if *dirFlag != "" {
+		if err := help.CreateDataDirWithFiles(*dirFlag); err != nil {
+			log.Fatalf("Failed to create directory and files: %v", err)
+		}
+	}
+	dataDir := *dirFlag
+
+	inventoryRepo := dal.NewJSONInventoryManager(filepath.Join(dataDir, "inventory.json"))
+	menuRepo := dal.NewJSONMenuManager(filepath.Join(dataDir, "menu_items.json"))
+	orderRepo := dal.NewJSONOrderManager(filepath.Join(dataDir, "orders.json"))
 
 	inventoryService := service.NewInventoryService(inventoryRepo)
 	menuService := service.NewMenuService(menuRepo)
-	orderService := service.NewOrderService(orderRepo)
+	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo)
 	reportService := service.NewReportService(orderRepo, menuRepo)
 
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)

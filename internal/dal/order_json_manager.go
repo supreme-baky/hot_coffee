@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"hot-coffee/models"
+	"log/slog"
 	"os"
 	"sync"
 )
@@ -86,11 +87,15 @@ func (m *JSONOrderManager) DeleteOrder(id string) error {
 func (m *JSONOrderManager) CloseOrder(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	slog.Info("Trying to close order", "givenID", id)
 	for i, order := range m.orders {
+		slog.Info("Checking", "orderID", order.ID)
 		if order.ID == id {
+			slog.Info("Found and closing", "orderID", id)
 			m.orders[i].Status = "closed"
 			return m.save()
 		}
 	}
+	slog.Warn("Order not found to close", "givenID", id)
 	return errors.New("order not found")
 }

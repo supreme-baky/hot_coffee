@@ -3,6 +3,7 @@ package dal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hot-coffee/models"
 	"os"
 	"sync"
@@ -81,4 +82,44 @@ func (m *JSONInventoryManager) DeleteInventoryItem(id string) error {
 		}
 	}
 	return errors.New("item not found")
+}
+
+func (m *JSONInventoryManager) CheckSufficientIngredients(required []models.MenuItemIngredient) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, req := range required {
+		found := false
+		for _, inv := range m.items {
+			if inv.IngredientID == req.IngredientID {
+				found = true
+				if inv.Quantity < req.Quantity {
+					return fmt.Errorf(
+						"insufficient inventory for ingredient '%s'. Required: %.2f, Available: %.2f",
+						inv.Name, req.Quantity, inv.Quantity,
+					)
+				}
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("ingredient '%s' not found in inventory", req.IngredientID)
+		}
+	}
+	return nil
+}
+
+func (m *JSONInventoryManager) DeductIngredients(required []models.MenuItemIngredient) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, req := range required {
+		for i := range m.items {
+			if m.items[i].IngredientID == req.IngredientID {
+				m.items[i].Quantity -= req.Quantity
+				break
+			}
+		}
+	}
+	return m.save()
 }

@@ -8,4 +8,6 @@ type InventoryManager interface {
 	GetInventoryItem(id string) (models.InventoryItem, error)
 	UpdateInventoryItem(item models.InventoryItem) error
 	DeleteInventoryItem(id string) error
+	CheckSufficientIngredients(required []models.MenuItemIngredient) error
+	DeductIngredients(required []models.MenuItemIngredient) error
 }

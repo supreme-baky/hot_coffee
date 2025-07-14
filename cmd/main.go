@@ -45,13 +45,13 @@ func main() {
 		case http.MethodPost:
 			inventoryHandler.AddNewInventoryItem(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/inventory/", func(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimPrefix(r.URL.Path, "/inventory/")
 		if id == "" {
-			http.Error(w, "Missing inventory ID", http.StatusBadRequest)
+			help.WriteError(w, http.StatusBadRequest, "Missing inventory ID")
 			return
 		}
 		switch r.Method {
@@ -62,7 +62,7 @@ func main() {
 		case http.MethodDelete:
 			inventoryHandler.DeleteInventoryItem(w, r, id)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 
@@ -73,13 +73,13 @@ func main() {
 		case http.MethodPost:
 			menuHandler.AddNewMenuItem(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/menu/", func(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimPrefix(r.URL.Path, "/menu/")
 		if id == "" {
-			http.Error(w, "Missing menu item ID", http.StatusBadRequest)
+			help.WriteError(w, http.StatusBadRequest, "Missing menu item ID")
 			return
 		}
 		switch r.Method {
@@ -90,7 +90,7 @@ func main() {
 		case http.MethodDelete:
 			menuHandler.DeleteMenuItem(w, r, id)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 
@@ -101,13 +101,13 @@ func main() {
 		case http.MethodPost:
 			orderHandler.CreateOrder(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/orders/")
 		if path == "" {
-			http.NotFound(w, r)
+			help.WriteError(w, http.StatusNotFound, "Order path not found")
 			return
 		}
 
@@ -127,7 +127,7 @@ func main() {
 		case http.MethodDelete:
 			orderHandler.DeleteOrder(w, r, orderID)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 

@@ -11,5 +11,5 @@ type MenuManager interface {
 }
 
 func (m *JSONMenuManager) LoadMenuItems() ([]models.MenuItem, error) {
-	return m.GetAllMenuItems() // или LoadAll()
+	return m.GetAllMenuItems()
 }

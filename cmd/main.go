@@ -16,7 +16,7 @@ import (
 func main() {
 	helpFlag := flag.Bool("help", false, "Prints help information")
 	port := flag.Int("port", 8080, "Port number for the server")
-	dirFlag := flag.String("dir", "./data", "Creates a directory with initial JSON files (orders, menu_items, inventory)")
+	dir := flag.String("dir", "data", "Path to the data directory")
 	flag.Parse()
 
 	if *helpFlag {
@@ -24,16 +24,9 @@ func main() {
 		return
 	}
 
-	if *dirFlag != "" {
-		if err := help.CreateDataDirWithFiles(*dirFlag); err != nil {
-			log.Fatalf("Failed to create directory and files: %v", err)
-		}
-	}
-	dataDir := *dirFlag
-
-	inventoryRepo := dal.NewJSONInventoryManager(filepath.Join(dataDir, "inventory.json"))
-	menuRepo := dal.NewJSONMenuManager(filepath.Join(dataDir, "menu_items.json"))
-	orderRepo := dal.NewJSONOrderManager(filepath.Join(dataDir, "orders.json"))
+	inventoryRepo := dal.NewJSONInventoryManager(filepath.Join(*dir, "inventory.json"))
+	menuRepo := dal.NewJSONMenuManager(filepath.Join(*dir, "menu_items.json"))
+	orderRepo := dal.NewJSONOrderManager(filepath.Join(*dir, "orders.json"))
 
 	inventoryService := service.NewInventoryService(inventoryRepo)
 	menuService := service.NewMenuService(menuRepo)
@@ -54,15 +47,11 @@ func main() {
 		case http.MethodPost:
 			inventoryHandler.AddNewInventoryItem(w, r)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 	mux.HandleFunc("/inventory/", func(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimPrefix(r.URL.Path, "/inventory/")
-		if id == "" {
-			help.WriteError(w, http.StatusBadRequest, "Missing inventory ID")
-			return
-		}
 		switch r.Method {
 		case http.MethodGet:
 			inventoryHandler.GetInventoryItem(w, r, id)
@@ -71,10 +60,11 @@ func main() {
 		case http.MethodDelete:
 			inventoryHandler.DeleteInventoryItem(w, r, id)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
+	
 	mux.HandleFunc("/menu", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -82,15 +72,11 @@ func main() {
 		case http.MethodPost:
 			menuHandler.AddNewMenuItem(w, r)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 	mux.HandleFunc("/menu/", func(w http.ResponseWriter, r *http.Request) {
 		id := strings.TrimPrefix(r.URL.Path, "/menu/")
-		if id == "" {
-			help.WriteError(w, http.StatusBadRequest, "Missing menu item ID")
-			return
-		}
 		switch r.Method {
 		case http.MethodGet:
 			menuHandler.GetMenuItem(w, r, id)
@@ -99,7 +85,7 @@ func main() {
 		case http.MethodDelete:
 			menuHandler.DeleteMenuItem(w, r, id)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -110,33 +96,27 @@ func main() {
 		case http.MethodPost:
 			orderHandler.CreateOrder(w, r)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/orders/")
-		if path == "" {
-			help.WriteError(w, http.StatusNotFound, "Order path not found")
-			return
-		}
-
 		if strings.HasSuffix(path, "/close") && r.Method == http.MethodPost {
-			orderID := strings.TrimSuffix(path, "/close")
-			orderID = strings.TrimSuffix(orderID, "/")
-			orderHandler.CloseOrder(w, r, orderID)
+			id := strings.TrimSuffix(path, "/close")
+			orderHandler.CloseOrder(w, r, id)
 			return
 		}
 
-		orderID := strings.TrimSuffix(path, "/")
+		id := strings.TrimSuffix(path, "/")
 		switch r.Method {
 		case http.MethodGet:
-			orderHandler.GetOrderByID(w, r, orderID)
+			orderHandler.GetOrderByID(w, r, id)
 		case http.MethodPut:
-			orderHandler.UpdateOrder(w, r, orderID)
+			orderHandler.UpdateOrder(w, r, id)
 		case http.MethodDelete:
-			orderHandler.DeleteOrder(w, r, orderID)
+			orderHandler.DeleteOrder(w, r, id)
 		default:
-			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
 

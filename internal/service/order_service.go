@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"errors"
 	"hot-coffee/internal/dal"
 	"hot-coffee/models"
 	"time"
@@ -22,37 +22,39 @@ func NewOrderService(orderRepo dal.OrderManager, menuRepo dal.MenuManager, inven
 }
 
 func (s *OrderService) CreateOrder(order models.Order) error {
-	requiredIngredients := make(map[string]float64)
-
-	for _, item := range order.Items {
-		menuItem, err := s.MenuRepo.GetMenuItem(item.ProductID)
-		if err != nil {
-			return fmt.Errorf("Invalid product ID '%s'", item.ProductID)
-		}
-		for _, ing := range menuItem.Ingredients {
-			requiredIngredients[ing.IngredientID] += ing.Quantity * float64(item.Quantity)
-		}
-	}
-
-	var requiredList []models.MenuItemIngredient
-	for id, qty := range requiredIngredients {
-		requiredList = append(requiredList, models.MenuItemIngredient{
-			IngredientID: id,
-			Quantity:     qty,
-		})
-	}
-
-	if err := s.InventoryRepo.CheckSufficientIngredients(requiredList); err != nil {
+	menuItems, err := s.MenuRepo.GetAllMenuItems()
+	if err != nil {
 		return err
 	}
 
-	if err := s.InventoryRepo.DeductIngredients(requiredList); err != nil {
+	menuMap := make(map[string]models.MenuItem)
+	for _, item := range menuItems {
+		menuMap[item.ID] = item
+	}
+
+	var ingredientsList []models.MenuItemIngredient
+	for _, orderItem := range order.Items {
+		menuItem, ok := menuMap[orderItem.ProductID]
+		if !ok {
+			return errors.New("invalid product ID: " + orderItem.ProductID)
+		}
+		for _, ing := range menuItem.Ingredients {
+			ingredientsList = append(ingredientsList, models.MenuItemIngredient{
+				IngredientID: ing.IngredientID,
+				Quantity:     ing.Quantity * float64(orderItem.Quantity),
+			})
+		}
+	}
+
+	if err := s.InventoryRepo.CheckSufficientIngredients(ingredientsList); err != nil {
+		return err
+	}
+	if err := s.InventoryRepo.DeductIngredients(ingredientsList); err != nil {
 		return err
 	}
 
 	order.Status = "open"
 	order.CreatedAt = time.Now().Format(time.RFC3339)
-
 	return s.OrderRepo.CreateOrder(order)
 }
 
@@ -75,3 +77,4 @@ func (s *OrderService) CloseOrder(orderID string) error {
 func (s *OrderService) GetOrderByID(orderID string) (models.Order, error) {
 	return s.OrderRepo.GetOrderByID(orderID)
 }
+

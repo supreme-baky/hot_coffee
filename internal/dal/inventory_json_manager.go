@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"hot-coffee/models"
+	"log/slog"
 	"os"
 	"sync"
 )
@@ -23,8 +24,13 @@ func NewJSONInventoryManager(filePath string) *JSONInventoryManager {
 
 func (m *JSONInventoryManager) load() {
 	file, err := os.ReadFile(m.filePath)
-	if err == nil {
-		_ = json.Unmarshal(file, &m.items)
+	if err != nil {
+		slog.Error("Failed to read inventory file", "path", m.filePath, "error", err)
+		return
+	}
+
+	if err := json.Unmarshal(file, &m.items); err != nil {
+		slog.Error("Invalid JSON format in inventory file", "path", m.filePath, "error", err)
 	}
 }
 

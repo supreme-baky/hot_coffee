@@ -23,8 +23,13 @@ func NewJSONOrderManager(filePath string) *JSONOrderManager {
 
 func (m *JSONOrderManager) load() {
 	file, err := os.ReadFile(m.filePath)
-	if err == nil {
-		_ = json.Unmarshal(file, &m.orders)
+	if err != nil {
+		slog.Error("Failed to read inventory file", "path", m.filePath, "error", err)
+		return
+	}
+
+	if err := json.Unmarshal(file, &m.orders); err != nil {
+		slog.Error("Invalid JSON format in inventory file", "path", m.filePath, "error", err)
 	}
 }
 

@@ -64,7 +64,6 @@ func main() {
 		}
 	})
 
-	
 	mux.HandleFunc("/menu", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

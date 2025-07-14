@@ -77,4 +77,3 @@ func (s *OrderService) CloseOrder(orderID string) error {
 func (s *OrderService) GetOrderByID(orderID string) (models.Order, error) {
 	return s.OrderRepo.GetOrderByID(orderID)
 }
-

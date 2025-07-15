@@ -42,6 +42,9 @@ func (s *ReportService) GetTotalSales() (float64, error) {
 
 	var total float64
 	for _, order := range orders {
+		if order.Status != "closed" {
+			continue
+		}
 		for _, item := range order.Items {
 			price, ok := menuMap[item.ProductID]
 			if !ok {
@@ -67,6 +70,9 @@ func (s *ReportService) GetPopularItems() ([]models.PopularItemReport, error) {
 
 	counts := make(map[string]int)
 	for _, order := range orders {
+		if order.Status != "closed" {
+			continue
+		}
 		for _, item := range order.Items {
 			counts[item.ProductID] += item.Quantity
 		}

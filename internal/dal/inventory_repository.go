@@ -10,4 +10,5 @@ type InventoryManager interface {
 	DeleteInventoryItem(id string) error
 	CheckSufficientIngredients(required []models.MenuItemIngredient) error
 	DeductIngredients(required []models.MenuItemIngredient) error
+	RestoreIngredients([]models.MenuItemIngredient) error
 }

@@ -129,3 +129,18 @@ func (m *JSONInventoryManager) DeductIngredients(required []models.MenuItemIngre
 	}
 	return m.save()
 }
+
+func (m *JSONInventoryManager) RestoreIngredients(ingredients []models.MenuItemIngredient) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, ing := range ingredients {
+		for i, item := range m.items {
+			if item.IngredientID == ing.IngredientID {
+				m.items[i].Quantity += ing.Quantity
+				break
+			}
+		}
+	}
+	return m.save()
+}

@@ -3,10 +3,13 @@ package dal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hot-coffee/models"
 	"log/slog"
+	"math/rand"
 	"os"
 	"sync"
+	"time"
 )
 
 type JSONOrderManager struct {
@@ -44,8 +47,32 @@ func (m *JSONOrderManager) save() error {
 func (m *JSONOrderManager) CreateOrder(order models.Order) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	rand.Seed(time.Now().UnixNano())
+
+	if order.ID == "" {
+		for {
+			randomID := fmt.Sprintf("%03d", rand.Intn(1000))
+			if !m.idExists(randomID) {
+				order.ID = randomID
+				break
+			}
+		}
+	} else if m.idExists(order.ID) {
+		return errors.New("order ID already exists")
+	}
+
 	m.orders = append(m.orders, order)
 	return m.save()
+}
+
+func (m *JSONOrderManager) idExists(id string) bool {
+	for _, o := range m.orders {
+		if o.ID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *JSONOrderManager) GetAllOrders() ([]models.Order, error) {

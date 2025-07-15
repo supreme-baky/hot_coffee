@@ -24,12 +24,16 @@ func main() {
 		return
 	}
 
+	if err := help.CreateDataDirWithFiles(*dir); err != nil {
+		log.Fatalf("Failed to initialize data directory: %v", err)
+	}
+
 	inventoryRepo := dal.NewJSONInventoryManager(filepath.Join(*dir, "inventory.json"))
 	menuRepo := dal.NewJSONMenuManager(filepath.Join(*dir, "menu_items.json"))
 	orderRepo := dal.NewJSONOrderManager(filepath.Join(*dir, "orders.json"))
 
-	inventoryService := service.NewInventoryService(inventoryRepo)
-	menuService := service.NewMenuService(menuRepo)
+	inventoryService := service.NewInventoryService(inventoryRepo, menuRepo)
+	menuService := service.NewMenuService(menuRepo, orderRepo)
 	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo)
 	reportService := service.NewReportService(orderRepo, menuRepo)
 
@@ -47,7 +51,7 @@ func main() {
 		case http.MethodPost:
 			inventoryHandler.AddNewInventoryItem(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/inventory/", func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +64,7 @@ func main() {
 		case http.MethodDelete:
 			inventoryHandler.DeleteInventoryItem(w, r, id)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 
@@ -71,7 +75,7 @@ func main() {
 		case http.MethodPost:
 			menuHandler.AddNewMenuItem(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/menu/", func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +88,7 @@ func main() {
 		case http.MethodDelete:
 			menuHandler.DeleteMenuItem(w, r, id)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 
@@ -95,7 +99,7 @@ func main() {
 		case http.MethodPost:
 			orderHandler.CreateOrder(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +119,7 @@ func main() {
 		case http.MethodDelete:
 			orderHandler.DeleteOrder(w, r, id)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			help.WriteError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		}
 	})
 

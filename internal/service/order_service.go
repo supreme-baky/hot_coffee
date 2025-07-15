@@ -67,6 +67,51 @@ func (s *OrderService) UpdateOrder(order models.Order) error {
 }
 
 func (s *OrderService) DeleteOrder(orderID string) error {
+	orders, err := s.OrderRepo.GetAllOrders()
+	if err != nil {
+		return err
+	}
+
+	var targetOrder *models.Order
+	for _, order := range orders {
+		if order.ID == orderID {
+			targetOrder = &order
+			break
+		}
+	}
+	if targetOrder == nil {
+		return errors.New("order not found")
+	}
+
+	if targetOrder.Status == "open" {
+		menuItems, err := s.MenuRepo.GetAllMenuItems()
+		if err != nil {
+			return err
+		}
+		menuMap := make(map[string]models.MenuItem)
+		for _, item := range menuItems {
+			menuMap[item.ID] = item
+		}
+
+		var ingredientsToRestore []models.MenuItemIngredient
+		for _, orderItem := range targetOrder.Items {
+			menuItem, ok := menuMap[orderItem.ProductID]
+			if !ok {
+				continue
+			}
+			for _, ing := range menuItem.Ingredients {
+				ingredientsToRestore = append(ingredientsToRestore, models.MenuItemIngredient{
+					IngredientID: ing.IngredientID,
+					Quantity:     ing.Quantity * float64(orderItem.Quantity),
+				})
+			}
+		}
+
+		if err := s.InventoryRepo.RestoreIngredients(ingredientsToRestore); err != nil {
+			return err
+		}
+	}
+
 	return s.OrderRepo.DeleteOrder(orderID)
 }
 

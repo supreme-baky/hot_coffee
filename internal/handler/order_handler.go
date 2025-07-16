@@ -56,30 +56,19 @@ func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request, id s
 }
 
 func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request, id string) {
-	var updatePayload struct {
-		Status string `json:"status"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&updatePayload); err != nil {
-		slog.Warn("Invalid status update JSON", "error", err)
-		help.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+	var order models.Order
+	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
+		help.WriteError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
+	order.ID = id
 
-	order, err := h.OrderService.GetOrderByID(id)
-	if err != nil {
-		slog.Error("Order not found", "orderID", id, "error", err)
-		help.WriteError(w, http.StatusNotFound, "Order not found")
-		return
-	}
-
-	order.Status = updatePayload.Status
 	if err := h.OrderService.UpdateOrder(order); err != nil {
-		slog.Error("Failed to update order status", "orderID", id, "error", err)
-		help.WriteError(w, http.StatusInternalServerError, "Failed to update order status")
+		help.WriteError(w, http.StatusInternalServerError, "Failed to update order")
 		return
 	}
 
-	slog.Info("Order status updated", "orderID", id, "status", updatePayload.Status)
+	slog.Info("Order updated", "orderID", id)
 	w.WriteHeader(http.StatusOK)
 }
 

@@ -95,9 +95,17 @@ func (m *JSONOrderManager) GetOrderByID(id string) (models.Order, error) {
 func (m *JSONOrderManager) UpdateOrder(updated models.Order) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	for i, order := range m.orders {
-		if order.ID == updated.ID {
-			m.orders[i] = updated
+
+	for i, existing := range m.orders {
+		if existing.ID == updated.ID {
+			if existing.Status == "closed" {
+				return fmt.Errorf("cannot update a closed order (ID: %s)", existing.ID)
+			}
+
+			existing.CustomerName = updated.CustomerName
+			existing.Items = updated.Items
+
+			m.orders[i] = existing
 			return m.save()
 		}
 	}
